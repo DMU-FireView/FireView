@@ -1,0 +1,86 @@
+# [Security & Env]
+.env
+.env.template
+*.env
+local.settings.json
+key.properties
+**/*.keystore
+**/*.jks
+
+# [OS & IDE]
+.DS_Store
+Thumbs.db
+Icon?
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.history
+.atom/
+.svn/
+
+# [Flutter / Dart]
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+app.*.symbols
+app.*.map.json
+
+# [Android]
+/android/app/debug
+/android/app/profile
+/android/app/release
+.gradle/
+captures/
+local.properties
+/gradlew
+/gradlew.bat
+
+# [iOS / Xcode]
+**/DerivedData/
+**/Pods/
+**/.symlinks/
+**/ephemeral/
+**/dgph
+**/xcuserdata/
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspectivev3
+Flutter/App.framework
+Flutter/Flutter.framework
+Flutter/Generated.xcconfig
+
+# [Python]
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.python_packages/
+.funcignore
+
+# [Visual Studio / C#]
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
+*.suo
+*.user
+*.sln.docstates
+*.[Cc]ache
+!*.[Cc]ache/
+
+# [Build & Misc]
+build/
+dist/
+node_modules/
+*.class
+*.log
+*.swp
+.build/
+.buildlog/

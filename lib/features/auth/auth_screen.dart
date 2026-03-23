@@ -1,7 +1,7 @@
+import 'package:flutter/foundation.dart'; // kIsWeb 사용을 위해 추가
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:go_router/go_router.dart';
+// 🚨 주의: AI가 넣었던 google_sign_in 패키지 임포트는 삭제했습니다!
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -16,42 +16,17 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: 실제 환경에 맞는 Client ID를 .env에서 관리하세요.
-      const webClientId = 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
-      const iosClientId = 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com';
-
-      // 1. GoogleSignIn 인스턴스 생성 및 설정
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: iosClientId,
-        serverClientId: webClientId,
+      // 🔥 이것이 최신 Supabase 공식 구글 로그인 방식입니다! (단 한 줄)
+      await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        // 웹 브라우저일 때는 null, 모바일 앱일 때는 돌아올 딥링크 주소 지정
+        redirectTo: kIsWeb ? null : 'fireview://login-callback',
       );
       
-      // 2. 로그인 시도 (가장 호환성이 높은 호출 방식)
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      
-      if (googleUser == null) {
-        // 사용자가 로그인을 취소한 경우
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      if (googleAuth.idToken == null) {
-        throw 'ID 토큰을 가져올 수 없습니다.';
-      }
-
-      // 3. Supabase 인증 연동
-      await Supabase.instance.client.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: googleAuth.idToken!,
-        accessToken: googleAuth.accessToken,
-      );
-
-      // 4. 성공 시 홈으로 이동
-      if (mounted) context.go('/home');
+      // 웹(크롬)에서는 이 함수가 호출되면 아예 구글 로그인 웹페이지로 넘어갑니다.
+      // 로그인 성공 시 알아서 앱으로 다시 돌아오며, 인증 상태가 갱신됩니다!
     } catch (e) {
-      debugPrint('Google Sign In Error: $e'); // 디버깅용 로그
+      debugPrint('Google Sign In Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('로그인 실패: $e')),
@@ -125,7 +100,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           Image.network(
                             'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
                             height: 24,
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.login),
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.login),
                           ),
                           const SizedBox(width: 12),
                           const Text(

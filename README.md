@@ -8,7 +8,7 @@
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 
 ## 📱 스크린샷 및 주요 기능 (Features)
-*(여기에 앱 실행 화면 캡처나 GIF를 넣어주세요!)*
+
 
 1. **AI 취업 비서 (Chatbot & Interactive Quiz)**
    - 구글 Gemini API 연동을 통한 자연어 처리

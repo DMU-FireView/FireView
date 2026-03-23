@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/router.dart';
+import 'features/ai/ai_chat_screen.dart';
 import 'dart:ui'; // 마우스 터치 인식을 위해 추가
 Future<void> main() async {
   // 1. Flutter 바인딩 초기화

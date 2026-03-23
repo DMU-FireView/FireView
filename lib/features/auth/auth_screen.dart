@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart'; // kIsWeb 사용을 위해 추가
+import 'dart:async'; // CCTV(Stream) 기능을 위해 추가
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-// 🚨 주의: AI가 넣었던 google_sign_in 패키지 임포트는 삭제했습니다!
+import 'package:go_router/go_router.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -12,19 +13,36 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading = false;
+  late final StreamSubscription<AuthState> _authStateSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // 🚨 앱이 켜질 때마다 로그인 상태인지 확인하는 CCTV 가동!
+    _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      // 세션이 존재한다(로그인 성공/유지 상태)면 바로 홈 화면으로 쫓아냅니다.
+      if (session != null) {
+        if (mounted) context.go('/home');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription.cancel(); // 화면 꺼질 때 CCTV도 끕니다
+    super.dispose();
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      // 🔥 이것이 최신 Supabase 공식 구글 로그인 방식입니다! (단 한 줄)
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        // 웹 브라우저일 때는 null, 모바일 앱일 때는 돌아올 딥링크 주소 지정
         redirectTo: kIsWeb ? null : 'fireview://login-callback',
       );
-      
-      // 웹(크롬)에서는 이 함수가 호출되면 아예 구글 로그인 웹페이지로 넘어갑니다.
-      // 로그인 성공 시 알아서 앱으로 다시 돌아오며, 인증 상태가 갱신됩니다!
+      // 웹에서는 구글 페이지로 넘어갔다 오면서 앱이 새로고침 되므로, 
+      // 화면 이동은 위쪽의 initState CCTV가 대신 처리합니다.
     } catch (e) {
       debugPrint('Google Sign In Error: $e');
       if (mounted) {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../home/quiz_canvas_screen.dart'; // 👈 아까 만든 퀴즈 캔버스 화면 경로! (경로가 다르면 맞춰주세요)
+import '../home/quiz_canvas_screen.dart'; // 👈 퀴즈 캔버스 화면 경로
 
 class AppColors {
   static const Color background = Color(0xFFF5F6F8);
@@ -75,17 +75,34 @@ class _AiChatScreenState extends State<AiChatScreen> {
       final apiKey = dotenv.env['AI_API_KEY'];
       if (apiKey == null) throw Exception('API 키가 없습니다.');
       
-      final model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: apiKey); // 2.5-flash로 바꾸셔도 됩니다!
+      final model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: apiKey); 
       
+      // 🚀 1. Supabase 창고에서 사장님의 '진짜 프로필' 가져오기!
+      String userProfile = '지원자님, 신입, IT 직무 희망, 강점 없음'; // 만약 못 불러오면 쓸 기본값
+      final user = Supabase.instance.client.auth.currentUser;
+      
+      if (user != null) {
+        final data = await Supabase.instance.client
+            .from('profiles')
+            .select()
+            .eq('id', user.id)
+            .maybeSingle(); // 에러 없이 조용히 가져오기
+            
+        if (data != null) {
+          // 마이페이지에서 적은 진짜 정보로 조립!
+          userProfile = '${data['full_name']}님, ${data['experience_year']}, ${data['job_type']} 직무 희망, 핵심 강점: ${data['strength']}';
+        }
+      }
+
       String prompt = queryText;
 
-      // 🎯 액션 타입별로 프롬프트 조작
+      // 🎯 2. 액션 타입별로 프롬프트 조작
       if (actionType == '퀴즈') {
-        prompt = '당신은 IT 대기업 면접관입니다. **키워드: $userInput**와 관련된 기술 면접용 객관식 퀴즈 1개를 내주세요. 파싱하기 쉽게 아래 형식으로 마크다운 없이 작성해주세요.\n\n###QUESTION### [문제 내용]\n###OPTS###\nA. [보기 1]\nB. [보기 2]\nC. [보기 3]\nD. [보기 4]\n###ANS### [A/B/C/D 중 정답 글자 하나만]\n###EXP### [자세한 해설]';
+        // 💡 제한 해제: 키워드에 따라 토익이든 IT든 자유롭게 내도록 명령!
+        prompt = '당신은 최고의 퀴즈 출제 위원입니다. **키워드: $userInput**와 관련된 객관식 퀴즈 1개를 내주세요. (입력된 키워드가 토익이면 영어 문제를, IT면 직무 면접을 내주세요). 파싱하기 쉽게 아래 형식으로 마크다운 없이 작성해주세요.\n\n###QUESTION### [문제 내용]\n###OPTS###\nA. [보기 1]\nB. [보기 2]\nC. [보기 3]\nD. [보기 4]\n###ANS### [A/B/C/D 중 정답 글자 하나만]\n###EXP### [자세한 해설]';
       } else if (actionType == '자소서') {
-        // 실제 인적사항을 불러와도 좋고, 일단 MVP용 하드코딩
-        String profile = '김세나님, 신입, 웹 프론트엔드 직무 희망, 새로운 기술 습득 빠름';
-        prompt = '당신은 1타 취업 컨설턴트입니다. **인적사항: $profile, 키워드: $userInput** 정보를 기반으로 프론트엔드 개발자 자기소개서 "지원동기" 초안을 300자 내외로 작성해주세요. 1타 컨설턴트의 TIP도 추가해주세요.';
+        // 💡 하드코딩 제거: 불러온 진짜 프로필(userProfile)을 주입!
+        prompt = '당신은 1타 취업 컨설턴트입니다. **인적사항: $userProfile, 추가요청키워드: $userInput** 정보를 기반으로 자기소개서 "지원동기" 초안을 300자 내외로 작성해주세요. 1타 컨설턴트의 TIP도 추가해주세요.';
       }
 
       final response = await model.generateContent([Content.text(prompt)]);

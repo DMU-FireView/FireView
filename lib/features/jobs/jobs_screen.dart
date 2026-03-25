@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // 👈 Supabase 연결
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AppColors {
   static const Color background = Color(0xFFF5F6F8);
@@ -19,8 +20,8 @@ class JobsScreen extends StatefulWidget {
 
 class _JobsScreenState extends State<JobsScreen> {
   String _selectedCategory = '전체';
-  // 💡 데이터 불일치 해결: DB에 저장된 실제 태그 이름들로 카테고리 버튼을 완벽하게 맞췄습니다!
-  final List<String> _categories = ['전체', '웹 프론트', '인프라', 'Mobile', 'Python', 'AI'];
+  // 💡 고용24 데이터에 맞게 카테고리 대공사!
+  final List<String> _categories = ['전체', '공공기관', '대기업', '공기업', '중견기업', '외국계기업'];
 
   @override
   Widget build(BuildContext context) {
@@ -29,93 +30,56 @@ class _JobsScreenState extends State<JobsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
-        title: const Text(
-          '채용/기업',
-          style: TextStyle(color: AppColors.textMain, fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: AppColors.textMain),
-            onPressed: () {},
-          ),
-        ],
+        title: const Text('채용/기업', style: TextStyle(color: AppColors.textMain, fontSize: 20, fontWeight: FontWeight.bold)),
+        actions: [IconButton(icon: const Icon(Icons.search, color: AppColors.textMain), onPressed: () {})],
       ),
       body: Column(
         children: [
-          // 1. 카테고리 필터 영역 (여전히 오렌지색 상태 변화는 여기서 담당)
+          // 1. 카테고리 필터 영역
           Container(
-            color: AppColors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            color: AppColors.white, padding: const EdgeInsets.symmetric(vertical: 12),
             child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: _categories.map((category) {
                   final isSelected = _selectedCategory == category;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text(
-                        category,
-                        style: TextStyle(
-                          color: isSelected ? AppColors.white : AppColors.textSub,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: AppColors.pointOrange,
-                      backgroundColor: AppColors.badgeBg,
-                      side: BorderSide.none,
+                      label: Text(category, style: TextStyle(color: isSelected ? AppColors.white : AppColors.textSub, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                      selected: isSelected, selectedColor: AppColors.pointOrange, backgroundColor: AppColors.badgeBg, side: BorderSide.none,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      onSelected: (selected) {
-                        // 버튼을 누르면 화면을 다시 그리면서(_selectedCategory 변경), 아래 FutureBuilder가 데이터를 새로 가져오게 만듭니다.
-                        setState(() => _selectedCategory = category);
-                      },
+                      onSelected: (selected) => setState(() => _selectedCategory = category),
                     ),
                   );
                 }).toList(),
               ),
             ),
           ),
-          
           const SizedBox(height: 10),
 
-          // 2. 🔥 대망의 진짜 DB 연결 리스트 영역 (필터링 로직 완벽 적용!)
+          // 2. 🔥 대망의 고용24 API 연결 영역
           Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              // 🚀 마법의 필터링 로직! 
-              // 선택된 게 '전체'면 다 가져오고, 아니면 tags 배열에 우리가 선택한 카테고리 글자가 포함된(contains) 녀석만 찾아와!
-              future: _selectedCategory == '전체' 
-                  ? Supabase.instance.client.from('jobs').select()
-                  : Supabase.instance.client.from('jobs').select().contains('tags', [_selectedCategory]),
+            child: FutureBuilder<http.Response>(
+              future: http.get(Uri.parse('http://localhost:3000/api/public-companies')), // Node.js 찌르기!
               builder: (context, snapshot) {
-                // 로딩 중일 때 (주황색 동그라미)
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: AppColors.pointOrange));
-                }
-                // 에러 났을 때
-                if (snapshot.hasError) {
-                  return const Center(child: Text('데이터를 불러오지 못했습니다.', style: TextStyle(color: AppColors.textSub)));
-                }
+                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: AppColors.pointOrange));
+                if (snapshot.hasError || !snapshot.hasData) return const Center(child: Text('데이터를 불러오지 못했습니다.', style: TextStyle(color: AppColors.textSub)));
                 
-                final jobList = snapshot.data ?? [];
-                
-                // 데이터가 없을 때 (필터링 결과가 없을 때)
-                if (jobList.isEmpty) {
-                  return const Center(child: Text('해당하는 직무의 공채가 없습니다.', style: TextStyle(color: AppColors.textSub)));
-                }
+                final decodedData = json.decode(utf8.decode(snapshot.data!.bodyBytes));
+                final List<dynamic> allCompanies = decodedData['dhsOpenEmpHireInfoList']['dhsOpenEmpHireInfo'] ?? [];
 
-                // 성공적으로 가져왔을 때!
+                // 🚀 마법의 프론트엔드 필터링! 선택한 카테고리만 걸러냅니다.
+                final filteredCompanies = _selectedCategory == '전체' 
+                    ? allCompanies 
+                    : allCompanies.where((c) => c['coClcdNm'] == _selectedCategory).toList();
+
+                if (filteredCompanies.isEmpty) return const Center(child: Text('해당하는 형태의 기업이 없습니다.', style: TextStyle(color: AppColors.textSub)));
+
                 return ListView.separated(
-                  padding: const EdgeInsets.all(20),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: jobList.length,
+                  padding: const EdgeInsets.all(20), physics: const BouncingScrollPhysics(), itemCount: filteredCompanies.length,
                   separatorBuilder: (context, index) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final job = jobList[index];
-                    return _buildJobCard(job);
-                  },
+                  itemBuilder: (context, index) => _buildCompanyCard(filteredCompanies[index]),
                 );
               },
             ),
@@ -125,102 +89,57 @@ class _JobsScreenState extends State<JobsScreen> {
     );
   }
 
-  // 3. 개별 채용 공고 카드 위젯 (디자인은 이전과 동일)
-  Widget _buildJobCard(Map<String, dynamic> job) {
-    // DB에서 가져온 태그(List<dynamic>)를 플러터가 이해할 수 있는 List<String>으로 변환
-    final List<dynamic> rawTags = job['tags'] ?? [];
-    final List<String> tags = rawTags.map((e) => e.toString()).toList();
-
+  // 3. 고용24 데이터 전용 기업 카드 위젯!
+  Widget _buildCompanyCard(dynamic company) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5)),
-        ],
-      ),
+      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🖼️ 기업 로고 (💡 여기에 errorBuilder 방패 장착 완료!)
               Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.badgeBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.business, color: AppColors.textSub, size: 20),
+                width: 45, height: 45,
+                decoration: BoxDecoration(color: AppColors.badgeBg, borderRadius: BorderRadius.circular(8)),
+                child: company['regLogImgNm'] != null && company['regLogImgNm'].toString().isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8), 
+                        child: Image.network(
+                          company['regLogImgNm'], 
+                          fit: BoxFit.contain,
+                          // 이미지가 깨졌을 때 기본 빌딩 아이콘을 보여주는 마법의 코드!
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.business, color: AppColors.textSub, size: 24);
+                          },
+                        )
+                      )
+                    : const Icon(Icons.business, color: AppColors.textSub, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      job['company_name'].toString(),
-                      style: const TextStyle(color: AppColors.textMain, fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
+                    Text(company['coNm'] ?? '이름 없음', style: const TextStyle(color: AppColors.textMain, fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text(
-                      job['location'].toString(),
-                      style: const TextStyle(color: AppColors.textSub, fontSize: 11),
-                    ),
+                    Text(company['coClcdNm'] ?? '분류 없음', style: const TextStyle(color: AppColors.pointOrange, fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(Icons.bookmark_border, color: AppColors.textSub, size: 22),
-                onPressed: () {},
-              ),
+              IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.bookmark_border, color: AppColors.textSub, size: 22), onPressed: () {}),
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  job['title'].toString(),
-                  style: const TextStyle(color: AppColors.textMain, fontSize: 16, fontWeight: FontWeight.bold, height: 1.3),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildTag(job['d_day'].toString(), isHighlight: true),
-              ...tags.map((tag) => _buildTag(tag)).toList(),
-            ],
+          // 📝 기업 소개 요약
+          Text(
+            company['coIntroSummaryCont'] ?? '소개 내용이 없습니다.',
+            style: const TextStyle(color: AppColors.textMain, fontSize: 14, height: 1.4),
+            maxLines: 2, overflow: TextOverflow.ellipsis,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTag(String text, {bool isHighlight = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isHighlight ? AppColors.textMain : AppColors.badgeBg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: isHighlight ? AppColors.white : AppColors.textSub,
-          fontSize: 11,
-          fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
-        ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AppColors {
   static const Color background = Color(0xFFF5F6F8);
@@ -100,44 +102,79 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           child: Row(
             children: [
-              Icon(Icons.local_fire_department_rounded, color: AppColors.pointOrange, size: 20),
+              Icon(Icons.business_center_rounded, color: AppColors.pointOrange, size: 20),
               SizedBox(width: 8),
-              Text('마감 임박 공채', style: TextStyle(color: AppColors.textMain, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('🔥 오늘의 추천 공채 기업', style: TextStyle(color: AppColors.textMain, fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
         Container(
           height: 140, padding: const EdgeInsets.only(left: 20),
-          child: FutureBuilder<List<Map<String, dynamic>>>(
-            future: Supabase.instance.client.from('jobs').select(),
+          // 💡 Supabase 대신 우리 백엔드(Node.js)로 찌릅니다!
+          child: FutureBuilder<http.Response>(
+            future: http.get(Uri.parse('http://localhost:3000/api/public-companies')), // 안드로이드 에뮬레이터 기준
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: AppColors.pointOrange));
-              if (snapshot.hasError || (snapshot.data ?? []).isEmpty) return const Center(child: Text('공채가 없습니다.', style: TextStyle(color: AppColors.textSub)));
-              final jobs = snapshot.data!;
+              if (snapshot.hasError || !snapshot.hasData) return const Center(child: Text('데이터를 불러올 수 없습니다.', style: TextStyle(color: AppColors.textSub)));
+              
+              // JSON 번역 및 알맹이 빼오기
+              final decodedData = json.decode(utf8.decode(snapshot.data!.bodyBytes));
+              final List<dynamic> companies = decodedData['dhsOpenEmpHireInfoList']['dhsOpenEmpHireInfo'] ?? [];
+
+              if (companies.isEmpty) return const Center(child: Text('기업 정보가 없습니다.', style: TextStyle(color: AppColors.textSub)));
+
               return ListView.separated(
-                scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), itemCount: jobs.length,
+                scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), itemCount: companies.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
-                  final job = jobs[index];
+                  final company = companies[index];
                   return Container(
-                    width: 140, padding: const EdgeInsets.all(16),
+                    width: 150, padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))]),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Placeholder(fallbackHeight: 40, fallbackWidth: 40, color: AppColors.badgeBg),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(color: AppColors.textMain, borderRadius: BorderRadius.circular(4)),
-                              child: Text(job['d_day'].toString(), style: const TextStyle(color: AppColors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                            ),
+                            // 🖼️ 고용24 로고 이미지 띄우기!
+                            company['regLogImgNm'] != null && company['regLogImgNm'].toString().isNotEmpty
+                              ? Image.network(
+                                  company['regLogImgNm'], 
+                                  width: 40, 
+                                  height: 40, 
+                                  fit: BoxFit.contain,
+                                  // 💡 마법의 방패: 이미지 불러오기 실패하면 빨간 박스 대신 기본 회색 빌딩 아이콘 띄우기!
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 40, height: 40,
+                                      decoration: BoxDecoration(color: AppColors.badgeBg, borderRadius: BorderRadius.circular(8)),
+                                      child: const Icon(Icons.business, size: 20, color: Colors.grey),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  width: 40, height: 40,
+                                  decoration: BoxDecoration(color: AppColors.badgeBg, borderRadius: BorderRadius.circular(8)),
+                                  child: const Icon(Icons.business, size: 20, color: Colors.grey),
+                                ),
+                                                      
+                            // 🏷️ 기업 분류 (공공기관, 중견기업 등)
+                            if (company['coClcdNm'] != null && company['coClcdNm'].toString().isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(color: AppColors.textMain, borderRadius: BorderRadius.circular(4)),
+                                child: Text(company['coClcdNm'], style: const TextStyle(color: AppColors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ),
                           ],
                         ),
-                        const SizedBox(height: 15),
-                        Text(job['company_name'].toString(), style: const TextStyle(color: AppColors.textMain, fontSize: 12, fontWeight: FontWeight.bold, height: 1.2), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        const Spacer(),
+                        // 🏢 회사 이름
+                        Text(company['coNm'].toString(), style: const TextStyle(color: AppColors.textMain, fontSize: 13, fontWeight: FontWeight.bold, height: 1.2), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        // 📝 한 줄 소개
+                        Text(company['coIntroSummaryCont'] ?? '', style: const TextStyle(color: AppColors.textSub, fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   );

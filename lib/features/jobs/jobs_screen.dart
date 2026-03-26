@@ -19,78 +19,111 @@ class JobsScreen extends StatefulWidget {
 }
 
 class _JobsScreenState extends State<JobsScreen> {
-  String _selectedCategory = '전체';
-  // 💡 고용24 데이터에 맞게 카테고리 대공사!
-  final List<String> _categories = ['전체', '공공기관', '대기업', '공기업', '중견기업', '외국계기업'];
+  // 💡 안드로이드 에뮬레이터면 'http://10.0.2.2:3000', 크롬(웹)이면 'http://localhost:3000'
+  final String baseUrl = 'http://localhost:3000/api'; 
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        title: const Text('채용/기업', style: TextStyle(color: AppColors.textMain, fontSize: 20, fontWeight: FontWeight.bold)),
-        actions: [IconButton(icon: const Icon(Icons.search, color: AppColors.textMain), onPressed: () {})],
-      ),
-      body: Column(
-        children: [
-          // 1. 카테고리 필터 영역
-          Container(
-            color: AppColors.white, padding: const EdgeInsets.symmetric(vertical: 12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal, physics: const BouncingScrollPhysics(), padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: _categories.map((category) {
-                  final isSelected = _selectedCategory == category;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(category, style: TextStyle(color: isSelected ? AppColors.white : AppColors.textSub, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                      selected: isSelected, selectedColor: AppColors.pointOrange, backgroundColor: AppColors.badgeBg, side: BorderSide.none,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      onSelected: (selected) => setState(() => _selectedCategory = category),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+    // 🚀 마법의 위젯: DefaultTabController가 스와이프 탭 기능을 알아서 다 해줍니다!
+    return DefaultTabController(
+      length: 2, // 💡 일단 완성된 2개(공채, 강소)만 세팅! 나중에 5개로 늘릴 수 있습니다.
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.white,
+          elevation: 0,
+          title: const Text('채용/기업', style: TextStyle(color: AppColors.textMain, fontSize: 20, fontWeight: FontWeight.bold)),
+          actions: [IconButton(icon: const Icon(Icons.search, color: AppColors.textMain), onPressed: () {})],
+          // 탭바 메뉴 세팅
+          bottom: const TabBar(
+            labelColor: AppColors.pointOrange,
+            unselectedLabelColor: AppColors.textSub,
+            indicatorColor: AppColors.pointOrange,
+            indicatorWeight: 3,
+            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            tabs: [
+              Tab(text: '🔥 공채 기업'),
+              Tab(text: '⭐ 강소 기업'),
+            ],
           ),
-          const SizedBox(height: 10),
-
-          // 2. 🔥 대망의 고용24 API 연결 영역
-          Expanded(
-            child: FutureBuilder<http.Response>(
-              future: http.get(Uri.parse('http://localhost:3000/api/public-companies')), // Node.js 찌르기!
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: AppColors.pointOrange));
-                if (snapshot.hasError || !snapshot.hasData) return const Center(child: Text('데이터를 불러오지 못했습니다.', style: TextStyle(color: AppColors.textSub)));
-                
-                final decodedData = json.decode(utf8.decode(snapshot.data!.bodyBytes));
-                final List<dynamic> allCompanies = decodedData['dhsOpenEmpHireInfoList']['dhsOpenEmpHireInfo'] ?? [];
-
-                // 🚀 마법의 프론트엔드 필터링! 선택한 카테고리만 걸러냅니다.
-                final filteredCompanies = _selectedCategory == '전체' 
-                    ? allCompanies 
-                    : allCompanies.where((c) => c['coClcdNm'] == _selectedCategory).toList();
-
-                if (filteredCompanies.isEmpty) return const Center(child: Text('해당하는 형태의 기업이 없습니다.', style: TextStyle(color: AppColors.textSub)));
-
-                return ListView.separated(
-                  padding: const EdgeInsets.all(20), physics: const BouncingScrollPhysics(), itemCount: filteredCompanies.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) => _buildCompanyCard(filteredCompanies[index]),
-                );
-              },
-            ),
-          ),
-        ],
+        ),
+        // 탭바를 눌렀을 때 보여줄 각각의 화면들 (순서대로 매칭됨)
+        body: TabBarView(
+          physics: const BouncingScrollPhysics(), // 스와이프할 때 쫀득한 효과
+          children: [
+            _buildPublicCompaniesTab(), // 1번 탭: 공채기업
+            _buildSmallGiantsTab(),     // 2번 탭: 강소기업
+          ],
+        ),
       ),
     );
   }
 
-  // 3. 고용24 데이터 전용 기업 카드 위젯!
-  Widget _buildCompanyCard(dynamic company) {
+  // ==========================================
+  // 1번 탭: 🔥 공채 기업 리스트
+  // ==========================================
+  Widget _buildPublicCompaniesTab() {
+    return FutureBuilder<http.Response>(
+      future: http.get(Uri.parse('$baseUrl/public-companies')),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: AppColors.pointOrange));
+        if (snapshot.hasError || !snapshot.hasData) return const Center(child: Text('데이터를 불러오지 못했습니다.'));
+        
+        final decodedData = json.decode(utf8.decode(snapshot.data!.bodyBytes));
+        final List<dynamic> companies = decodedData['dhsOpenEmpHireInfoList']['dhsOpenEmpHireInfo'] ?? [];
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(20), physics: const BouncingScrollPhysics(), itemCount: companies.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final company = companies[index];
+            return _buildCardUI(
+              logoUrl: company['regLogImgNm'],
+              companyName: company['coNm'],
+              badgeText: company['coClcdNm'], // 예: 공공기관
+              description: company['coIntroSummaryCont'],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ==========================================
+  // 2번 탭: ⭐ 강소 기업 리스트 (새로 만든 부분!)
+  // ==========================================
+  Widget _buildSmallGiantsTab() {
+    return FutureBuilder<http.Response>(
+      future: http.get(Uri.parse('$baseUrl/small-giants')),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: AppColors.pointOrange));
+        if (snapshot.hasError || !snapshot.hasData) return const Center(child: Text('데이터를 불러오지 못했습니다.'));
+        
+        final decodedData = json.decode(utf8.decode(snapshot.data!.bodyBytes));
+        // 💡 강소기업은 JSON 구조가 살짝 다릅니다! 사장님이 주신 데이터에 맞춰서 쏙 빼옵니다.
+        final List<dynamic> companies = decodedData['smallGiantsList']['smallGiant'] ?? [];
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(20), physics: const BouncingScrollPhysics(), itemCount: companies.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final company = companies[index];
+            return _buildCardUI(
+              logoUrl: null, // 강소기업 API는 로고를 안 주니 null 처리
+              companyName: company['coNm'],
+              badgeText: company['sgBrandNm'], // 예: 노사문화우수기업
+              description: '${company['superIndTpNm']} | ${company['regionNm']}\n직원수: ${company['alwaysWorkerCnt']}명', // 산업 + 지역 + 직원수 조합
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ==========================================
+  // 🎨 공통 카드 UI (디자인 통일)
+  // ==========================================
+  Widget _buildCardUI({required dynamic logoUrl, required dynamic companyName, required dynamic badgeText, required dynamic description}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))]),
@@ -100,42 +133,36 @@ class _JobsScreenState extends State<JobsScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🖼️ 기업 로고 (💡 여기에 errorBuilder 방패 장착 완료!)
+              // 🖼️ 로고 영역
               Container(
                 width: 45, height: 45,
                 decoration: BoxDecoration(color: AppColors.badgeBg, borderRadius: BorderRadius.circular(8)),
-                child: company['regLogImgNm'] != null && company['regLogImgNm'].toString().isNotEmpty
+                child: logoUrl != null && logoUrl.toString().isNotEmpty
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8), 
-                        child: Image.network(
-                          company['regLogImgNm'], 
-                          fit: BoxFit.contain,
-                          // 이미지가 깨졌을 때 기본 빌딩 아이콘을 보여주는 마법의 코드!
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.business, color: AppColors.textSub, size: 24);
-                          },
-                        )
+                        child: Image.network(logoUrl, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.business, color: AppColors.textSub, size: 24))
                       )
                     : const Icon(Icons.business, color: AppColors.textSub, size: 24),
               ),
               const SizedBox(width: 12),
+              // 텍스트 영역
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(company['coNm'] ?? '이름 없음', style: const TextStyle(color: AppColors.textMain, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(companyName ?? '이름 없음', style: const TextStyle(color: AppColors.textMain, fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text(company['coClcdNm'] ?? '분류 없음', style: const TextStyle(color: AppColors.pointOrange, fontSize: 12, fontWeight: FontWeight.w600)),
+                    if (badgeText != null && badgeText.toString().isNotEmpty)
+                      Text(badgeText.toString(), style: const TextStyle(color: AppColors.pointOrange, fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
-              IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.bookmark_border, color: AppColors.textSub, size: 22), onPressed: () {}),
+              const Icon(Icons.bookmark_border, color: AppColors.textSub, size: 22),
             ],
           ),
           const SizedBox(height: 16),
-          // 📝 기업 소개 요약
           Text(
-            company['coIntroSummaryCont'] ?? '소개 내용이 없습니다.',
+            description ?? '소개 내용이 없습니다.',
             style: const TextStyle(color: AppColors.textMain, fontSize: 14, height: 1.4),
             maxLines: 2, overflow: TextOverflow.ellipsis,
           ),

@@ -72,3 +72,20 @@ def get_occupations():
         return xmltodict.parse(response.content)
     except Exception as e:
         return {"error": str(e)}
+    
+    # ==========================================
+# 🚪 6. [상세페이지] 공채속보 상세정보
+# ==========================================
+@app.get("/api/public-companies/detail")
+def get_public_company_detail(empSeqno: str):
+    try:
+        # 💡 주의: 사장님 말씀대로 이건 '채용정보 API 키'를 써야 할 수 있습니다!
+        # .env 파일에 JOB_INFO_API_KEY 라는 이름으로 키를 추가해두시면 좋습니다.
+        api_key = os.getenv("JOB_INFO_API_KEY", "").strip() 
+        
+        url = f"https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo210D21.do?authKey={api_key}&returnType=XML&callTp=D&empSeqno={empSeqno}"
+        
+        response = requests.get(url)
+        return xmltodict.parse(response.content)
+    except Exception as e:
+        return {"error": str(e)}

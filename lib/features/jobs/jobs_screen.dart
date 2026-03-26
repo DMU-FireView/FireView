@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'company_detail_screen.dart'; // 방금 만든 파일 이름!
 
 class AppColors {
   static const Color background = Color(0xFFF5F6F8);
@@ -79,8 +80,21 @@ class _JobsScreenState extends State<JobsScreen> {
           final decodedData = json.decode(utf8.decode(snapshot.data!.bodyBytes));
           final items = _ensureList(decodedData['dhsOpenEmpHireInfoList']?['dhsOpenEmpHireInfo']);
           if (items.isEmpty) return const Center(child: Text('공채 기업이 없습니다.'));
+          // 기존 코드 덮어쓰기!
           return _buildListView(items, (item) => _buildCardUI(
-            logoUrl: item['regLogImgNm'], title: item['coNm'], badgeText: item['coClcdNm'], description: item['coIntroSummaryCont']
+            logoUrl: item['regLogImgNm'], 
+            title: item['coNm'], 
+            badgeText: item['coClcdNm'], 
+            description: item['coIntroSummaryCont'],
+            // 🚀 카드를 눌렀을 때의 마법!
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CompanyDetailScreen(company: item), // 아이템 전체를 상세화면으로 토스!
+                ),
+              );
+            }
           ));
         } catch (e) { return const Center(child: Text('에러가 발생했습니다.')); }
       },
@@ -187,40 +201,48 @@ class _JobsScreenState extends State<JobsScreen> {
   }
 
   // 🎨 공통 카드 UI
-  Widget _buildCardUI({required dynamic logoUrl, required dynamic title, required dynamic badgeText, required dynamic description}) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))]),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 45, height: 45,
-                decoration: BoxDecoration(color: AppColors.badgeBg, borderRadius: BorderRadius.circular(8)),
-                child: logoUrl != null && logoUrl.toString().isNotEmpty
-                    ? ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(logoUrl, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.business, color: AppColors.textSub, size: 24)))
-                    : const Icon(Icons.business, color: AppColors.textSub, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title ?? '이름 없음', style: const TextStyle(color: AppColors.textMain, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    if (badgeText != null && badgeText.toString().isNotEmpty)
-                      Text(badgeText.toString(), style: const TextStyle(color: AppColors.pointOrange, fontSize: 12, fontWeight: FontWeight.w600)),
-                  ],
+ // 🎨 공통 카드 UI (클릭 기능 추가!)
+  // 💡 onTap 이라는 '눌렀을 때 할 행동'을 파라미터로 추가로 받습니다.
+  Widget _buildCardUI({required dynamic logoUrl, required dynamic title, required dynamic badgeText, required dynamic description, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap, // 카드를 누르면 넘겨받은 행동을 실행!
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 45, height: 45,
+                  decoration: BoxDecoration(color: AppColors.badgeBg, borderRadius: BorderRadius.circular(8)),
+                  child: logoUrl != null && logoUrl.toString().isNotEmpty
+                      ? ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(logoUrl, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.business, color: AppColors.textSub, size: 24)))
+                      : const Icon(Icons.business, color: AppColors.textSub, size: 24),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(description ?? '', style: const TextStyle(color: AppColors.textMain, fontSize: 14, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
-        ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title ?? '이름 없음', style: const TextStyle(color: AppColors.textMain, fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      if (badgeText != null && badgeText.toString().isNotEmpty)
+                        Text(badgeText.toString(), style: const TextStyle(color: AppColors.pointOrange, fontSize: 12, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                // 상세페이지로 넘어간다는 걸 직관적으로 보여주는 화살표 아이콘으로 변경!
+                const Icon(Icons.chevron_right, color: AppColors.textSub, size: 24),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(description ?? '', style: const TextStyle(color: AppColors.textMain, fontSize: 14, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
     );
   }

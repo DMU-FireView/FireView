@@ -112,8 +112,36 @@ class _JobsScreenState extends State<JobsScreen> {
           final decodedData = json.decode(utf8.decode(snapshot.data!.bodyBytes));
           final items = _ensureList(decodedData['smallGiantsList']?['smallGiant']);
           if (items.isEmpty) return const Center(child: Text('강소 기업이 없습니다.'));
+          // 2번 탭: 강소기업 리스트 렌더링 부분 덮어쓰기!
           return _buildListView(items, (item) => _buildCardUI(
-            logoUrl: null, title: item['coNm'], badgeText: item['sgBrandNm'], description: '${item['superIndTpNm']} | ${item['regionNm']}\n직원수: ${item['alwaysWorkerCnt']}명'
+            logoUrl: null, 
+            title: item['coNm'], 
+            badgeText: item['sgBrandNm'], 
+            description: '${item['superIndTpNm']} | ${item['regionNm']}\n직원수: ${item['alwaysWorkerCnt']}명',
+            
+            // 🚀 강소기업 전용 클릭 이벤트 장착!
+            onTap: () {
+              // 💡 마법의 포장지 교체: 강소기업 데이터를 상세페이지 규격에 맞게 변환!
+              final mappedCompanyData = {
+                'regLogImgNm': null, // 로고 없음
+                'coNm': item['coNm'], // 회사명
+                'coClcdNm': item['sgBrandNm'], // 뱃지 (예: 노사문화우수기업)
+                'coIntroSummaryCont': '주요 사업: ${item['coMainProd'] ?? '정보 없음'}', // 한줄 요약에 주요 생산품 넣기!
+                // 상세 소개칸에 주소, 직원수, 산업군 예쁘게 조합해서 넣기!
+                'coIntroCont': '🏢 산업군: ${item['superIndTpNm']} > ${item['indTpNm']}\n\n'
+                               '📍 주소: ${item['coAddr']}\n\n'
+                               '👥 직원수: ${item['alwaysWorkerCnt']}명\n\n'
+                               '💡 고용노동부가 공식 인증한 우수 강소기업입니다.',
+                'homepg': null, // 강소기업 API는 홈페이지 주소를 안 주니 버튼은 자동으로 숨겨집니다!
+              };
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CompanyDetailScreen(company: mappedCompanyData), // 포장한 데이터 토스!
+                ),
+              );
+            }
           ));
         } catch (e) { return const Center(child: Text('에러가 발생했습니다.')); }
       },

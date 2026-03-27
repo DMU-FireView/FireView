@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http; // 🚀 이거 추가!
+import 'dart:convert';
+
 class CompanyDetailScreen extends StatelessWidget {
   // 💡 이전 화면(리스트)에서 통째로 넘겨받을 기업 데이터 주머니!
   final Map<String, dynamic> company;
@@ -8,37 +11,31 @@ class CompanyDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 주머니에서 필요한 데이터 쏙쏙 빼기
+    // 주머니에서 데이터 빼기
     final logoUrl = company['regLogImgNm'];
     final name = company['coNm'] ?? '이름 없음';
     final category = company['coClcdNm'];
     final summary = company['coIntroSummaryCont'];
     final description = company['coIntroCont'] ?? '상세 소개 내용이 없습니다.';
     final homepage = company['homepg'];
+    
+    // 💡 사업자등록번호 꺼내기 (공채는 'busino', 강소기업은 'busiNo'로 날아옵니다)
+    final busino = company['busino'] ?? company['busiNo'];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
-      appBar: AppBar(
-        title: Text(name, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black), // 뒤로가기 버튼 까맣게
-      ),
+      appBar: AppBar(title: Text(name, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)), backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        physics: const BouncingScrollPhysics(), padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. 헤더 영역 (로고 + 회사명 + 배지)
             Row(
               children: [
                 Container(
                   width: 80, height: 80,
                   decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
-                  child: logoUrl != null && logoUrl.toString().isNotEmpty
-                      ? ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(logoUrl, fit: BoxFit.contain, errorBuilder: (_,__,___) => const Icon(Icons.business, size: 40, color: Colors.grey)))
-                      : const Icon(Icons.business, size: 40, color: Colors.grey),
+                  child: logoUrl != null && logoUrl.toString().isNotEmpty ? ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(logoUrl, fit: BoxFit.contain, errorBuilder: (_,__,___) => const Icon(Icons.business, size: 40, color: Colors.grey))) : const Icon(Icons.business, size: 40, color: Colors.grey),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -47,18 +44,44 @@ class CompanyDetailScreen extends StatelessWidget {
                     children: [
                       Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      if (category != null && category.toString().isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(color: const Color(0xFFFF512F), borderRadius: BorderRadius.circular(6)),
-                          child: Text(category, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                        ),
+                      
+                      // 💡 뱃지 + 🚨 임금체불 판독기 퓨처빌더!
+                      Wrap(
+                        spacing: 8, runSpacing: 8,
+                        children: [
+                          if (category != null && category.toString().isNotEmpty)
+                            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFF512F), borderRadius: BorderRadius.circular(6)), child: Text(category, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))),
+                          
+                          // 🚀 사업자번호가 있으면 실시간으로 백엔드에 찔러서 체불 여부 검사!
+                          if (busino != null && busino.toString().isNotEmpty)
+                            FutureBuilder<http.Response>(
+                              future: http.get(Uri.parse('http://localhost:3000/api/check-unpaid-wages?brno=$busino')),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.only(top: 2), child: Text('⏳ 클린 기업 검증 중...', style: TextStyle(color: Colors.grey, fontSize: 12)));
+                                if (snapshot.hasData) {
+                                  try {
+                                    final decoded = json.decode(utf8.decode(snapshot.data!.bodyBytes));
+                                    final isUnpaid = decoded['jdgnList']?['judgReltYn'];
+                                    
+                                    if (isUnpaid == 'Y') { // 🚨 체불 기업!
+                                      return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.red)), child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14), SizedBox(width: 4), Text('임금체불 이력 있음', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12))]));
+                                    } else if (isUnpaid == 'N') { // ✅ 클린 기업!
+                                      return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green)), child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.verified, color: Colors.green, size: 14), SizedBox(width: 4), Text('클린 기업 (체불 없음)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12))]));
+                                    }
+                                  } catch (e) { return const SizedBox(); }
+                                }
+                                return const SizedBox();
+                              },
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 )
               ],
             ),
             const SizedBox(height: 30),
+// ... (이 아래로는 기존 요약, 기업소개, 홈페이지 버튼 코드 동일!)
 
             // 2. 한 줄 요약 영역
             if (summary != null && summary.toString().isNotEmpty) ...[

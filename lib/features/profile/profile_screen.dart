@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'bookmark_screen.dart';
 
 class AppColors {
   static const Color background = Color(0xFFF5F6F8);
@@ -197,6 +198,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
+
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 5))],
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: AppColors.badgeBg, borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.bookmark, color: AppColors.pointOrange, size: 24),
+                    ),
+                    title: const Text('내가 찜한 목록', style: TextStyle(color: AppColors.textMain, fontSize: 16, fontWeight: FontWeight.bold)),
+                    trailing: const Icon(Icons.chevron_right, color: AppColors.textSub),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const BookmarkScreen()));
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
 
                 const Divider(color: AppColors.badgeBg),
                 const SizedBox(height: 20),

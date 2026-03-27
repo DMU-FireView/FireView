@@ -89,3 +89,33 @@ def get_public_company_detail(empSeqno: str):
         return xmltodict.parse(response.content)
     except Exception as e:
         return {"error": str(e)}
+    
+    # ==========================================
+# 🚪 6. [상세페이지] 직업정보 상세
+# ==========================================
+@app.get("/api/occupations/detail")
+def get_occupation_detail(jobCd: str):
+    try:
+        api_key = os.getenv("OCCU_API_KEY", "").strip()
+        # 사장님 매뉴얼 완벽 적용: target=JOBDTL, jobGb=1, dtlGb=1(요약)
+        url = f"https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo212D01.do?authKey={api_key}&returnType=XML&target=JOBDTL&jobGb=1&jobCd={jobCd}&dtlGb=1"
+        
+        response = requests.get(url)
+        return xmltodict.parse(response.content)
+    except Exception as e:
+        return {"error": str(e)}
+
+# ==========================================
+# 🚪 7. [필살기] 임금체불 명단공개 사업주 조회
+# ==========================================
+@app.get("/api/check-unpaid-wages")
+def check_unpaid_wages(brno: str):
+    try:
+        # 공채기업 API 키를 함께 사용합니다. (안 되면 채용정보 키로 교체 필요)
+        api_key = os.getenv("JOB_API_KEY", "").strip() 
+        url = f"https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo210L41.do?authKey={api_key}&returnType=XML&brno={brno}"
+        
+        response = requests.get(url)
+        return xmltodict.parse(response.content)
+    except Exception as e:
+        return {"error": str(e)}

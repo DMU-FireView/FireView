@@ -55,7 +55,7 @@ class CompanyDetailScreen extends StatelessWidget {
                           // 🚀 사업자번호가 있으면 실시간으로 백엔드에 찔러서 체불 여부 검사!
                           if (busino != null && busino.toString().isNotEmpty)
                             FutureBuilder<http.Response>(
-                              future: http.get(Uri.parse('http://localhost:3000/api/check-unpaid-wages?brno=$busino')),
+                              future: http.get(Uri.parse('https://fireview-backend-bwaudkejhxeeg6fm.koreacentral-01.azurewebsites.net/api/public-companies')),
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.only(top: 2), child: Text('⏳ 클린 기업 검증 중...', style: TextStyle(color: Colors.grey, fontSize: 12)));
                                 if (snapshot.hasData) {

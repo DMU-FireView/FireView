@@ -21,7 +21,7 @@ class JobsScreen extends StatefulWidget {
 }
 
 class _JobsScreenState extends State<JobsScreen> {
-  final String baseUrl = 'http://localhost:3000/api'; 
+  final String baseUrl = "https://fireview-backend-bwaudkejhxeeg6fm.koreacentral-01.azurewebsites.net/api";
   final Set<String> _bookmarkedItems = {};
 
   @override

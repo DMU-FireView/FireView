@@ -112,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 140, padding: const EdgeInsets.only(left: 20),
           // 💡 Supabase 대신 우리 백엔드(Node.js)로 찌릅니다!
           child: FutureBuilder<http.Response>(
-            future: http.get(Uri.parse('http://localhost:3000/api/public-companies')), // 안드로이드 에뮬레이터 기준
+            future: http.get(Uri.parse('https://fireview-backend-bwaudkejhxeeg6fm.koreacentral-01.azurewebsites.net/api/public-companies')),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: AppColors.pointOrange));
               if (snapshot.hasError || !snapshot.hasData) return const Center(child: Text('데이터를 불러올 수 없습니다.', style: TextStyle(color: AppColors.textSub)));

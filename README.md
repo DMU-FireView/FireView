@@ -9,7 +9,6 @@
 
 ## 📱 스크린샷 및 주요 기능 (Features)
 
-
 1. **AI 취업 비서 (Chatbot & Interactive Quiz)**
    - 구글 Gemini API 연동을 통한 자연어 처리
    - 입력한 키워드(CS, 토익 등)에 맞춘 **객관식 퀴즈 생성 및 인터랙티브 해설 (Canvas UI)**
@@ -20,3 +19,21 @@
 3. **채용 공고 큐레이션 (Job Postings)**
    - 기술 스택(Tags) 기반의 실시간 리스트 필터링 적용
    - 직관적인 D-Day 뱃지 및 기업 정보 UI 제공
+
+<br>
+
+**📸 앱 스크린샷 미리보기**
+
+<p align="center">
+  <img src="스크린샷 2026-03-31 205415.png" width="30%" alt="스크린샷 1" />
+  <img src="스크린샷 2026-03-31 205420.png" width="30%" alt="스크린샷 2" />
+  <img src="스크린샷 2026-03-31 205424.png" width="30%" alt="스크린샷 3" />
+</p>
+<p align="center">
+  <img src="스크린샷 2026-03-31 205429.png" width="30%" alt="스크린샷 4" />
+  <img src="스크린샷 2026-03-31 205433.png" width="30%" alt="스크린샷 5" />
+  <img src="스크린샷 2026-03-31 205437.png" width="30%" alt="스크린샷 6" />
+</p>
+<p align="center">
+  <img src="스크린샷 2026-03-31 205442.png" width="30%" alt="스크린샷 7" />
+</p>

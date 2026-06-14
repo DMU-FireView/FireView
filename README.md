@@ -197,7 +197,7 @@ flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080
 
 | 이름  | 역할               | 담당                                                   |
 | --- | ---------------- | ---------------------------------------------------- |
-| 김동환 | PM & Cloud Infra | 팀장, 프로젝트 총괄 및 Azure 기반 Redis 비동기 처리 아키텍처 설계 |
+| 김동환 | Full | 팀장, 프로젝트 총괄 및 Azure 기반 Redis 비동기 처리 아키텍처 설계 |
 | 정빈  | Frontend         | Flutter 기반 Web/App 크로스플랫폼 UI/UX 및 Riverpod 상태 관리 구현  |
 | 남정현 | Backend          | Spring Boot 기반 메인 비즈니스 API 개발 및 SSE 실시간 알림 파이프라인 구축  |
 | 김하연 | AI & Data        | FastAPI 기반 리뷰 크롤링 Worker 구현 및 KoELECTRA AI 분석 모델 연동  |

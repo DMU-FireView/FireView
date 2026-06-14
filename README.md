@@ -141,7 +141,7 @@ lib/
     ├── constants/
     ├── extensions/
     └── widgets/
-
+```
 ## 🏗 Technical Highlights
 
 Area

@@ -141,3 +141,142 @@ lib/
     ├── constants/
     ├── extensions/
     └── widgets/
+
+🏗 Technical Highlights
+
+Area
+
+Decision
+
+Impact
+
+State Management
+
+기능별 ViewModel과 Riverpod provider 철저한 분리
+
+화면의 UI 상태, 비즈니스 흐름, 의존성 주입을 독립적인 Feature 단위로 안전하게 관리
+
+Routing
+
+GoRouter와 로그인 상태(isLoggedInProvider) 기반 Redirect
+
+인증이 필수적인 찜, 장바구니, 마이페이지 접근 로직을 파편화 없이 중앙에서 일관되게 제어
+
+Domain Design
+
+기능별 UseCase 중심의 클린 아키텍처 도입
+
+UI 계층과 비즈니스 로직의 결합도를 낮춰 유지보수 및 테스트 용이성 극대화
+
+Network Config
+
+환경 변수(--dart-define) 기반 API Base URL 동적 할당
+
+로컬 개발, 스테이징, 프로덕션 환경에서 API 엔드포인트를 유연하게 스위칭
+
+Result Handling
+
+Result, Failure 래퍼 클래스를 통한 Dio 오류 변환
+
+백엔드 네트워크 실패를 규격화하여 UI 단에서 사용자 친화적인 에러 메시지로 일관되게 표시
+
+Search UX
+
+자동완성 ➔ 최근/인기 검색 ➔ 필터 ➔ 정렬의 유기적 연결
+
+사용자가 쇼핑 탐색의 맥락을 잃지 않고 점진적으로 원하는 상품 조건을 좁혀갈 수 있도록 유도
+
+Responsive UI
+
+LayoutBuilder 기반 화면 폭 감지 및 레이아웃 동적 조정
+
+Web(데스크톱)의 넓은 뷰와 Mobile의 좁은 뷰 모두에서 정보 손실 없이 자연스러운 그리드 렌더링
+
+🔧 Troubleshooting
+
+Issue
+
+Approach
+
+Result
+
+페이지 접근 제어 충돌
+
+isLoggedInProvider를 감시하는 Router Refresh Notifier 구현
+
+인증된 유저와 비인증 유저 간의 페이지 Redirect 무한 루프 해결 및 흐름 안정화
+
+반응형 카드 렌더링 깨짐
+
+기기 화면 폭(Width)에 따라 Grid 카드의 밀도와 썸네일 이미지 비율 동적 연산
+
+데스크톱 다단 목록과 모바일 단일/이단 목록에서 텍스트 오버플로우 및 이미지 잘림 현상 방지
+
+외부 이미지 로딩 지연/실패
+
+공통 네트워크 이미지 위젯 래핑 및 shimmer, errorBuilder 적용
+
+이미지 로딩 중 자연스러운 스켈레톤 UI를 보여주고, 링크 만료 시 기본 Placeholder 노출로 레이아웃 붕괴 방지
+
+찜/장바구니 상태 불일치
+
+상품 ID 기반 개별 Provider 적용 및 목록 Snapshot Invalidation 기법 활용
+
+검색 결과 카드, 상품 상세, 장바구니 탭 등 여러 화면을 오가더라도 담기/취소 상태가 실시간으로 완벽히 동기화됨
+
+비동기 API 예외 처리
+
+Dio Interceptor에서 발생하는 예외를 자체 Failure 모델로 매핑하여 캐치
+
+타임아웃, 서버 500 에러 등의 상황에서 앱 크래시를 방지하고 재시도 스낵바(Snackbar) 안정적 노출
+
+🧪 Testing
+
+핵심 쇼핑 흐름의 신뢰성과 공통 UI의 형태 유지를 위해 Feature 및 Widget 단위 테스트를 촘촘하게 구성했습니다.
+
+인증 UseCase 로직 및 로그인/회원가입 ViewModel 상태 전이 검증
+
+홈 대시보드 API 응답에 따른 렌더링 및 온보딩 완료 후 홈 진입 라우팅 흐름 테스트
+
+검색 결과 페이지의 무한 스크롤 및 상품 카드 터치 상호작용
+
+상품 상세 이미지 갤러리 스와이프 및 RTI 요약 카드 데이터 바인딩
+
+찜/장바구니 Provider의 낙관적 업데이트(Optimistic Update) 및 상태 동기화 검증
+
+공통 버튼, 텍스트 입력 필드, 로딩 상태 뷰 등 재사용 컴포넌트 반응형 테스트
+
+🚀 Roadmap
+
+[ ] 리뷰 신뢰도(RTI) 분석 기준 상세 설명 모달 및 시각화 차트 고도화
+
+[ ] 상품 상세 화면 내 AI 생성 '핵심 장단점 3줄 요약' 영역 추가
+
+[ ] 사용자 행동(조회, 검색) 데이터를 활용한 홈 화면 개인화 추천 알고리즘 강화
+
+[ ] 찜한 상품의 가격 하락 및 RTI 점수 변동 시 푸시 알림(Push Notification) 기능 도입
+
+[ ] CI/CD 파이프라인 구축을 통한 모바일 브라우저 및 앱 빌드 자동화 및 QA 커버리지 확대
+
+💻 Running Locally
+
+프로젝트 클론 후 아래 명령어를 통해 로컬 환경에서 앱을 실행할 수 있습니다.
+
+flutter pub get
+flutter run
+
+
+웹 플랫폼(Chrome)에서 실행 시 API 서버 주소를 로컬 호스트나 특정 운영 서버로 직접 지정하려면 --dart-define 플래그를 사용합니다.
+
+flutter run -d chrome --dart-define=API_BASE_URL=[https://api.beens.kr](https://api.beens.kr)
+
+
+🧑‍💻 Contributors
+
+김동환 (PM & Cloud Infra) - 팀장, 프로젝트 총괄 및 비동기 처리 아키텍처 설계
+
+정빈 (Frontend) - Flutter 기반 Web/App 크로스플랫폼 UI/UX 및 상태 관리 구현
+
+남정현 (Backend) - Spring Boot 기반 메인 API 개발 및 SSE 실시간 알림 파이프라인 구축
+
+김하연 (AI & Data) - FastAPI 기반 리뷰 크롤링 Worker 및 KoELECTRA AI 분석 모델 연동

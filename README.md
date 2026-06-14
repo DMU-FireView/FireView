@@ -142,7 +142,7 @@ lib/
     ├── extensions/
     └── widgets/
 
-##🏗 Technical Highlights
+## 🏗 Technical Highlights
 
 Area
 
@@ -192,7 +192,7 @@ LayoutBuilder 기반 화면 폭 감지 및 레이아웃 동적 조정
 
 Web(데스크톱)의 넓은 뷰와 Mobile의 좁은 뷰 모두에서 정보 손실 없이 자연스러운 그리드 렌더링
 
-##🔧 Troubleshooting
+## 🔧 Troubleshooting
 
 Issue
 

@@ -19,19 +19,19 @@
 <table>
   <tr>
     <td colspan="2" align="center">
-      <img src="./assets/readme/home.png" alt="Home screen" width="92%" /><br/>
+      <img src="./home.png" alt="Home screen" width="92%" /><br/>
       <b>Home</b><br/>
       리뷰 기반 추천 상품과 카테고리 탐색
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
-      <img src="./assets/readme/search.png" alt="Search results screen" width="88%" /><br/>
+      <img src="./search.png" alt="Search results screen" width="88%" /><br/>
       <b>Search Results</b><br/>
       RTI, 가격, 리뷰 조건 기반 상품 비교
     </td>
     <td align="center" width="50%">
-      <img src="./assets/readme/product-detail.png" alt="Product detail screen" width="88%" /><br/>
+      <img src="./product-detail.png" alt="Product detail screen" width="88%" /><br/>
       <b>Product Detail</b><br/>
       리뷰 신뢰도 요약과 판매처별 가격 정보 제공
     </td>
@@ -43,7 +43,9 @@
 프로젝트의 실제 구동 화면과 상세한 기술 설계 내용이 담긴 발표 자료를 확인하실 수 있습니다.
 
 * **🎬 [Re:view 서비스 시연 영상 보러가기](https://youtu.be/rIGmGRdqm48)**
-* **📄 [2026년 AI·가상융합(XR) 서비스 개발자 경진대회 개발계획서_DeepDive(김동환).pdf](./2026년%20AI·가상융합(XR)%20서비스%20개발자%20경진대회%20개발계획서_DeepDive(김동환).pdf)** ---
+* **📄 [FireView 프로젝트 1학기 발표 자료 (PPTX) 다운로드](./FireView%20프로젝트%201학기%20발표.pptx)**
+
+---
 
 ## 🎯 Overview
 
